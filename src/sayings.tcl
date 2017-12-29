@@ -74,7 +74,7 @@ bind $w.frame.list <Double-1> {
 	$g_sound play -start $start_audio -blocking 0
 }
 
-bind $w.frame.list <Button-2> {
+bind $w.frame.list <Control-1> {
     set tokens [selection get]
 	set start_txt [lindex $tokens 0]
 	set start_audio [lindex $tokens 1]
@@ -82,8 +82,8 @@ bind $w.frame.list <Button-2> {
 	set end_audio [lindex $tokens 3]
 	global g_sound
 	$g_sound stop
-	
-	TxtAudioModel::delete_mapper "$end_txt $$end_audio"
+
+	TxtAudioModel::delete_mapper "$end_txt $end_audio"
 	
 	set lastidx [$w.frame.list size]
 	incr lastidx -1
