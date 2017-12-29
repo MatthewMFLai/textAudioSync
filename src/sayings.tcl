@@ -63,6 +63,20 @@ grid $w.frame.xscroll -row 1 -column 0 -rowspan 1 -columnspan 1 -sticky news
 grid rowconfig    $w.frame 0 -weight 1 -minsize 0
 grid columnconfig $w.frame 0 -weight 1 -minsize 0
 
+bind $w.frame.list <ButtonRelease-1> {
+    set tokens [selection get]
+	set start_txt [lindex $tokens 0]
+	set start_audio [lindex $tokens 1]
+	set end_txt [lindex $tokens 2]
+	set end_audio [lindex $tokens 3]
+	
+    # Underline the word in the text box.
+    .t tag delete t_underline
+    .t tag configure t_underline -underline 1
+    .t tag add t_underline $start_txt $end_txt
+    .t see $start_txt
+}
+
 bind $w.frame.list <Double-1> {
     set tokens [selection get]
 	set start_txt [lindex $tokens 0]
