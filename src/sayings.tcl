@@ -7,16 +7,18 @@ pack .s -side right -fill y
 pack .t -side left -fill both -expand 1
 
 bind .t <ButtonRelease-1> {
-    set idx [.t index insert] 
-    set sndidx [s1 current_position]
-	TxtAudioModel::update_mapper "$idx $sndidx"
-	
-	set lastidx [$w.frame.list size]
-	incr lastidx -1
-	$w.frame.list delete 0 $lastidx
-	foreach segment [TxtAudioModel::gen_segments] {
-        $w.frame.list insert end $segment
-	}	
+    if {[snack::audio active]} {
+		set idx [.t index insert] 
+		set sndidx [s1 current_position]
+		TxtAudioModel::update_mapper "$idx $sndidx"
+		
+		set lastidx [$w.frame.list size]
+		incr lastidx -1
+		$w.frame.list delete 0 $lastidx
+		foreach segment [TxtAudioModel::gen_segments] {
+			$w.frame.list insert end $segment
+		}
+    }	
 }
 
 lappend auto_path C:/textAudioSync/bin/windows
@@ -88,7 +90,7 @@ bind $w.frame.list <Double-1> {
 	$g_sound play -start $start_audio -blocking 0
 }
 
-bind $w.frame.list <Control-1> {
+bind $w.frame.list <Control-3> {
     set tokens [selection get]
 	set start_txt [lindex $tokens 0]
 	set start_audio [lindex $tokens 1]
