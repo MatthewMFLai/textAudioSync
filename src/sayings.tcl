@@ -35,10 +35,11 @@ pack $w.msg -side top
 
 labelframe $w.justif -text Justification
 foreach c {Left Center Right} {
+    global g_sound
     set lower [string tolower $c]
     radiobutton $w.justif.$lower -text $c -variable just \
         -relief flat -value $lower -anchor w \
-        -command "$w.frame.list configure -justify \$just"
+        -command "stop_audio"
     pack $w.justif.$lower -side left -pady 2 -fill x
 }
 pack $w.justif
@@ -62,11 +63,39 @@ grid $w.frame.xscroll -row 1 -column 0 -rowspan 1 -columnspan 1 -sticky news
 grid rowconfig    $w.frame 0 -weight 1 -minsize 0
 grid columnconfig $w.frame 0 -weight 1 -minsize 0
 
-if {0} {
-$w.frame.list insert 0 "Don't speculate, measure" "Waste not, want not" "Early to bed and early to rise makes a man healthy, wealthy, and wise" "Ask not what your country can do for you, ask what you can do for your country" "I shall return" "NOT" "A picture is worth a thousand words" "User interfaces are hard to build" "Thou shalt not steal" "A penny for your thoughts" "Fool me once, shame on you;  fool me twice, shame on me" "Every cloud has a silver lining" "Where there's smoke there's fire" "It takes one to know one" "Curiosity killed the cat" "Take this job and shove it" "Up a creek without a paddle" "I'm mad as hell and I'm not going to take it any more" "An apple a day keeps the doctor away" "Don't look a gift horse in the mouth" "Measure twice, cut once"
+bind $w.frame.list <Double-1> {
+    set tokens [selection get]
+	set start_txt [lindex $tokens 0]
+	set start_audio [lindex $tokens 1]
+	set end_txt [lindex $tokens 2]
+	set end_audio [lindex $tokens 3]
+	global g_sound
+	$g_sound stop
+	$g_sound play -start $start_audio -blocking 0
+}
+
+bind $w.frame.list <Button-2> {
+    set tokens [selection get]
+	set start_txt [lindex $tokens 0]
+	set start_audio [lindex $tokens 1]
+	set end_txt [lindex $tokens 2]
+	set end_audio [lindex $tokens 3]
+	global g_sound
+	$g_sound stop
+	
+	TxtAudioModel::delete_mapper "$end_txt $$end_audio"
+	
+	set lastidx [$w.frame.list size]
+	incr lastidx -1
+	$w.frame.list delete 0 $lastidx
+	foreach segment [TxtAudioModel::gen_segments] {
+        $w.frame.list insert end $segment
+	}    
 }
 
 proc fileDialog {w} {
+    global g_sound
+	
     #   Type names		Extension(s)	Mac File Type(s)
     #
     #---------------------------------------------------------
@@ -97,6 +126,7 @@ proc fileDialog {w} {
 	}
 	
 	snack::sound s1 -file $filename
+	set g_sound s1
 	set f [open $filenameroot$prefix_txt r]
 	set data [read $f]
 	close $f	
@@ -113,4 +143,11 @@ proc fileDialog {w} {
 	foreach segment [TxtAudioModel::gen_segments] {
         $w.frame.list insert end $segment
 	}
+}
+
+proc stop_audio {} {
+    global g_sound
+	
+	$g_sound stop
+	return
 }
