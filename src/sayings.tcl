@@ -23,6 +23,7 @@ bind .t <ButtonRelease-1> {
 
 lappend auto_path C:/textAudioSync/bin/windows
 package require snack 
+set g_sound ""
 #-----------------------------------------
 
 set w .sayings
@@ -33,7 +34,8 @@ wm iconname $w "sayings"
 
 button $w.but -text "Load" -command "fileDialog $w"
 button $w.but2 -text "Stop" -command "stop_audio"
-pack $w.but $w.but2 -side top
+button $w.but3 -text "Exit" -command "exit"
+pack $w.but $w.but2 $w.but3 -side top
 
 frame $w.frame -borderwidth 10
 pack $w.frame -side top -expand yes -fill both -padx 1c
@@ -127,6 +129,9 @@ proc fileDialog {w} {
 		return	
 	}
 	
+	if {$g_sound != ""} {
+	    $g_sound destroy
+	}
 	snack::sound s1 -file $filename
 	set g_sound s1
 	set f [open $filenameroot$prefix_txt r]
@@ -141,6 +146,12 @@ proc fileDialog {w} {
 		TxtAudioModel::Init $filename $filenameroot$prefix_txt $filenameroot$prefix_dat $end_txt $end_audio
 	} else {
 		TxtAudioModel::Reload $filename $filenameroot$prefix_txt $filenameroot$prefix_dat	
+	}
+	
+	set lastidx [$w.frame.list size]
+	if {$lastidx} {
+		incr lastidx -1
+		$w.frame.list delete 0 $lastidx
 	}
 	foreach segment [TxtAudioModel::gen_segments] {
         $w.frame.list insert end $segment
