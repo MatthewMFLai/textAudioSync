@@ -28,26 +28,12 @@ package require snack
 set w .sayings
 catch {destroy $w}
 toplevel $w
-wm title $w "Listbox Demonstration (well-known sayings)"
+wm title $w "Text Audio Sync Controller"
 wm iconname $w "sayings"
-#positionWindow $w
-
-label $w.msg -wraplength 4i -justify left -text "The listbox below contains a collection of well-known sayings.  You can scan the list using either of the scrollbars or by dragging in the listbox window with button 2 pressed."
-pack $w.msg -side top
-
-labelframe $w.justif -text Justification
-foreach c {Left Center Right} {
-    global g_sound
-    set lower [string tolower $c]
-    radiobutton $w.justif.$lower -text $c -variable just \
-        -relief flat -value $lower -anchor w \
-        -command "stop_audio"
-    pack $w.justif.$lower -side left -pady 2 -fill x
-}
-pack $w.justif
 
 button $w.but -text "Load" -command "fileDialog $w"
-pack $w.but -side left
+button $w.but2 -text "Stop" -command "stop_audio"
+pack $w.but $w.but2 -side top
 
 frame $w.frame -borderwidth 10
 pack $w.frame -side top -expand yes -fill both -padx 1c
@@ -56,7 +42,7 @@ pack $w.frame -side top -expand yes -fill both -padx 1c
 scrollbar $w.frame.yscroll -command "$w.frame.list yview"
 scrollbar $w.frame.xscroll -orient horizontal \
     -command "$w.frame.list xview"
-listbox $w.frame.list -width 20 -height 10 -setgrid 1 \
+listbox $w.frame.list -width 30 -height 30 -setgrid 1 \
     -yscroll "$w.frame.yscroll set" -xscroll "$w.frame.xscroll set"
 
 grid $w.frame.list -row 0 -column 0 -rowspan 1 -columnspan 1 -sticky news
