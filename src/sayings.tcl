@@ -34,8 +34,7 @@ wm iconname $w "sayings"
 
 button $w.but -text "Load" -command "fileDialog $w"
 button $w.but2 -text "Stop" -command "stop_audio"
-button $w.but3 -text "Exit" -command "exit"
-pack $w.but $w.but2 $w.but3 -side top
+pack $w.but $w.but2 -side top
 
 frame $w.frame -borderwidth 10
 pack $w.frame -side top -expand yes -fill both -padx 1c
@@ -52,6 +51,9 @@ grid $w.frame.yscroll -row 0 -column 1 -rowspan 1 -columnspan 1 -sticky news
 grid $w.frame.xscroll -row 1 -column 0 -rowspan 1 -columnspan 1 -sticky news
 grid rowconfig    $w.frame 0 -weight 1 -minsize 0
 grid columnconfig $w.frame 0 -weight 1 -minsize 0
+
+button $w.but3 -text "Exit" -command "exit"
+pack $w.but3 -side top
 
 bind $w.frame.list <ButtonRelease-1> {
     set tokens [selection get]
