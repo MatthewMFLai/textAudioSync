@@ -69,6 +69,18 @@ bind $w.frame.list <ButtonRelease-1> {
     .t see $start_txt
 }
 
+bind $w.frame.list <Control-1> {
+    set tokens [selection get]
+	set start_txt [lindex $tokens 0]
+	set start_audio [lindex $tokens 1]
+	set end_txt [lindex $tokens 2]
+	set end_audio [lindex $tokens 3]
+	
+	global g_sound
+	$g_sound stop
+	$g_sound play -start $start_audio -end $end_audio -blocking 0
+}
+
 bind $w.frame.list <Double-1> {
     set tokens [selection get]
 	set start_txt [lindex $tokens 0]
