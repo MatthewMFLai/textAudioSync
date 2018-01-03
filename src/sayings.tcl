@@ -26,6 +26,7 @@ package require snack
 set g_sound ""
 #-----------------------------------------
 
+global w
 set w .sayings
 catch {destroy $w}
 toplevel $w
@@ -79,6 +80,8 @@ bind $w.frame.list <Control-1> {
 	global g_sound
 	$g_sound stop
 	$g_sound play -start $start_audio -end $end_audio -blocking 0
+	
+	adjustment_launch $end_txt $start_audio $end_audio ".hscale"
 }
 
 bind $w.frame.list <Double-1> {
@@ -177,4 +180,67 @@ proc stop_audio {} {
 	
 	$g_sound stop
 	return
+}
+
+proc adjustment_launch {end_txt start_audio end_audio win_name} {
+    global g_sentence_adjust
+	
+	if {[info exists g_sentence_adjust]} {
+	    unset g_sentence_adjust
+	}
+	set g_sentence_adjust(end_txt) $end_txt
+	set g_sentence_adjust(start_audio) $start_audio
+	set g_sentence_adjust(end_audio) $end_audio
+	set g_sentence_adjust(v) $win_name
+	
+	set v $win_name
+	catch {destroy $v}
+	toplevel $v
+	wm title $v "Sentence Adjustment"
+
+	frame $v.frame -borderwidth 10
+	pack $v.frame -side top -fill x
+
+	scale $v.frame.scale -orient horizontal -length 3020 -from -12000 -to -9000 \
+		-command "adjustment_replay" -tickinterval 500
+	pack $v.frame.scale -side bottom -expand yes -anchor n
+	$v.frame.scale set -10000
+	
+	button $v.b1 -text "Save" -width 10 \
+		-command "adjustment_save $v"
+	button $v.b2 -text "Quit" -width 10 \
+		-command {adjustment_destroy}
+	pack $v.b1 $v.b2 -side left -expand yes -pady 2
+}
+
+proc adjustment_replay {decrement} {
+	global g_sound
+    global g_sentence_adjust
+	$g_sound stop
+	$g_sound play -start $g_sentence_adjust(start_audio) -end [expr $g_sentence_adjust(end_audio) + $decrement] -blocking 0
+}
+
+proc adjustment_save {v} {
+    global g_sentence_adjust
+	global w
+	
+	set decrement [$v.frame.scale get]
+	TxtAudioModel::delete_mapper "$g_sentence_adjust(end_txt) $g_sentence_adjust(end_audio)"
+	TxtAudioModel::update_mapper "$g_sentence_adjust(end_txt) [expr $g_sentence_adjust(end_audio) + $decrement]"
+	
+	set lastidx [$w.frame.list size]
+	incr lastidx -1
+	$w.frame.list delete 0 $lastidx
+	foreach segment [TxtAudioModel::gen_segments] {
+		$w.frame.list insert end $segment
+	}
+	
+	adjustment_destroy
+}
+
+proc adjustment_destroy {} {
+    global g_sentence_adjust
+	
+	catch {destroy $g_sentence_adjust(v)}
+    return
 }
