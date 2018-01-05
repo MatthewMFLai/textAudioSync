@@ -143,6 +143,7 @@ proc audio_callback {} {
     .t tag add t_underline $start_txt $stop_txt
     .t see $start_txt
 	
+    after 1000
     $g_sound play -start $start -end $stop -blocking 0 -command audio_callback
     return    
 }

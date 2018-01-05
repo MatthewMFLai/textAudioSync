@@ -79,9 +79,9 @@ bind $w.frame.list <Control-1> {
 	
 	global g_sound
 	$g_sound stop
-	$g_sound play -start $start_audio -end $end_audio -blocking 0
+	$g_sound play -start $start_audio -end $end_audio -blocking 0 -command {set g_sentence_adjust(accept_slider) 1}
 	
-	adjustment_launch $end_txt $start_audio $end_audio ".hscale"
+	adjustment_launch $end_txt 100000 $end_audio ".hscale"
 }
 
 bind $w.frame.list <Double-1> {
@@ -182,14 +182,18 @@ proc stop_audio {} {
 	return
 }
 
-proc adjustment_launch {end_txt start_audio end_audio win_name} {
+proc adjustment_launch {end_txt interval end_audio win_name} {
     global g_sentence_adjust
 	
 	if {[info exists g_sentence_adjust]} {
 	    unset g_sentence_adjust
 	}
+	set g_sentence_adjust(accept_slider) 0
+	set g_sentence_adjust(debounce_check) 0
+	set g_sentence_adjust(debounce_interval_sec) 2
+	
 	set g_sentence_adjust(end_txt) $end_txt
-	set g_sentence_adjust(start_audio) $start_audio
+	set g_sentence_adjust(interval) $interval
 	set g_sentence_adjust(end_audio) $end_audio
 	set g_sentence_adjust(v) $win_name
 	
@@ -201,10 +205,10 @@ proc adjustment_launch {end_txt start_audio end_audio win_name} {
 	frame $v.frame -borderwidth 10
 	pack $v.frame -side top -fill x
 
-	scale $v.frame.scale -orient horizontal -length 3020 -from -12000 -to -9000 \
-		-command "adjustment_replay" -tickinterval 500
+	scale $v.frame.scale -orient horizontal -length 30020 -from -15000 -to 15000 \
+		-command {adjustment_debounce} -tickinterval 3000
 	pack $v.frame.scale -side bottom -expand yes -anchor n
-	$v.frame.scale set -10000
+	$v.frame.scale set 0
 	
 	button $v.b1 -text "Save" -width 10 \
 		-command "adjustment_save $v"
@@ -213,11 +217,53 @@ proc adjustment_launch {end_txt start_audio end_audio win_name} {
 	pack $v.b1 $v.b2 -side left -expand yes -pady 2
 }
 
+proc adjustment_debounce {decrement} {
+    global g_sentence_adjust
+	
+    if {$g_sentence_adjust(accept_slider)} {
+	    if {$g_sentence_adjust(debounce_check) == 0} {
+		    set g_sentence_adjust(debounce_check) 1
+			set debounce_interval $g_sentence_adjust(debounce_interval_sec)
+			set g_sentence_adjust(debounce_id) [after $debounce_interval adjustment_debounce_check]
+		}
+		set g_sentence_adjust(decrement) $decrement
+		set g_sentence_adjust(timestamp) [clock seconds]
+	}
+}
+
+proc adjustment_debounce_check {} {
+    global g_sentence_adjust
+
+	set debounce_interval $g_sentence_adjust(debounce_interval_sec)
+    if {[expr [clock seconds] - $g_sentence_adjust(timestamp)] < $debounce_interval} {
+		set g_sentence_adjust(debounce_id) [after $debounce_interval adjustment_debounce_check]	    
+	    return
+	}
+	set g_sentence_adjust(accept_slider) 0
+	set g_sentence_adjust(debounce_check) 0
+
+    adjustment_replay $g_sentence_adjust(decrement)
+	return
+}
+
 proc adjustment_replay {decrement} {
 	global g_sound
     global g_sentence_adjust
+	
 	$g_sound stop
-	$g_sound play -start $g_sentence_adjust(start_audio) -end [expr $g_sentence_adjust(end_audio) + $decrement] -blocking 0
+	set interval $g_sentence_adjust(interval)
+	set curr_stop [expr $g_sentence_adjust(end_audio) + $decrement]
+	set curr_start [expr $curr_stop - $interval]
+	$g_sound play -start $curr_start -end $curr_stop -blocking 1
+	
+	after 500
+	
+	set next_start [expr $curr_stop + 1]
+	set next_stop [expr $next_start + $interval]
+	$g_sound play -start $next_start -end $next_stop -blocking 1
+	
+    set g_sentence_adjust(accept_slider) 1
+	return
 }
 
 proc adjustment_save {v} {
