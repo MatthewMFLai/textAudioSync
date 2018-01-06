@@ -81,7 +81,8 @@ bind $w.frame.list <Control-1> {
 	$g_sound stop
 	$g_sound play -start $start_audio -end $end_audio -blocking 0 -command {set g_sentence_adjust(accept_slider) 1}
 	
-	adjustment_launch $end_txt 100000 $end_audio ".hscale"
+	set interval [expr ($end_audio - $start_audio + 1) / 4]
+	adjustment_launch $end_txt $interval $end_audio ".hscale"
 }
 
 bind $w.frame.list <Double-1> {
@@ -254,16 +255,29 @@ proc adjustment_replay {decrement} {
 	set interval $g_sentence_adjust(interval)
 	set curr_stop [expr $g_sentence_adjust(end_audio) + $decrement]
 	set curr_start [expr $curr_stop - $interval]
-	$g_sound play -start $curr_start -end $curr_stop -blocking 1
+	$g_sound play -start $curr_start -end $curr_stop -blocking 0 -command "adjustment_replay_next $decrement"
+	return
+}
+
+proc adjustment_replay_next {decrement} {
+	global g_sound
+    global g_sentence_adjust
+
+	after 750
 	
-	after 500
-	
+	set interval $g_sentence_adjust(interval)
+	set curr_stop [expr $g_sentence_adjust(end_audio) + $decrement]	
 	set next_start [expr $curr_stop + 1]
 	set next_stop [expr $next_start + $interval]
-	$g_sound play -start $next_start -end $next_stop -blocking 1
+	$g_sound play -start $next_start -end $next_stop -blocking 0 -command "adjustment_replay_finish"
+	return
+}
+
+proc adjustment_replay_finish {} {
+    global g_sentence_adjust
 	
     set g_sentence_adjust(accept_slider) 1
-	return
+    return	
 }
 
 proc adjustment_save {v} {
