@@ -6,13 +6,21 @@ scrollbar .s -command        {.t yview}
 pack .s -side right -fill y
 pack .t -side left -fill both -expand 1
 
+set g_gap_id ""
+
 bind .t <ButtonRelease-1> {
     global g_sound
+	global g_gap_id
 	global g_idx
 	
     if {[snack::audio active]} {
 		stop_audio
 	}
+    if {$g_gap_id != ""} {
+		after cancel $g_gap_id
+		set g_gap_id ""
+	}
+	
 	set idx [.t index insert] 
 	set g_idx [search_segments $idx]
 	if {$g_idx > -1} {
@@ -130,6 +138,7 @@ proc audio_callback {} {
 	
 	# Remove underline.
     .t tag delete t_underline
+	set g_gap_id ""
 	
     if {$g_idx == [llength $g_segments]} {
         return
@@ -152,10 +161,12 @@ proc audio_callback {} {
 proc audio_gap {} {
     global g_sound
 	global g_filename
+	global g_gap_id
 	
 	if {$g_sound != ""} {
 	    $g_sound destroy
 	}
 	snack::sound $g_sound -file $g_filename
-    after 500 {audio_callback}
+    set g_gap_id [after 500 {audio_callback}]
+	return
 }
