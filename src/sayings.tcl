@@ -59,9 +59,7 @@ pack $w.but3 -side top
 bind $w.frame.list <ButtonRelease-1> {
     set tokens [selection get]
 	set start_txt [lindex $tokens 0]
-	set start_audio [lindex $tokens 1]
 	set end_txt [lindex $tokens 2]
-	set end_audio [lindex $tokens 3]
 	
     # Underline the word in the text box.
     .t tag delete t_underline
@@ -87,19 +85,15 @@ bind $w.frame.list <Control-1> {
 
 bind $w.frame.list <Double-1> {
     set tokens [selection get]
-	set start_txt [lindex $tokens 0]
 	set start_audio [lindex $tokens 1]
-	set end_txt [lindex $tokens 2]
-	set end_audio [lindex $tokens 3]
 	global g_sound
 	$g_sound stop
+	sound_refresh
 	$g_sound play -start $start_audio -blocking 0
 }
 
 bind $w.frame.list <Control-3> {
     set tokens [selection get]
-	set start_txt [lindex $tokens 0]
-	set start_audio [lindex $tokens 1]
 	set end_txt [lindex $tokens 2]
 	set end_audio [lindex $tokens 3]
 	global g_sound
@@ -117,6 +111,8 @@ bind $w.frame.list <Control-3> {
 
 proc fileDialog {w} {
     global g_sound
+	global g_segments
+	global g_filename
 	
     #   Type names		Extension(s)	Mac File Type(s)
     #
@@ -146,6 +142,7 @@ proc fileDialog {w} {
 	    puts "$filename has no text file!"
 		return	
 	}
+	set g_filename $filename
 	
 	if {$g_sound != ""} {
 	    $g_sound destroy
@@ -174,6 +171,9 @@ proc fileDialog {w} {
 	foreach segment [TxtAudioModel::gen_segments] {
         $w.frame.list insert end $segment
 	}
+	
+	set g_segments [TxtAudioModel::gen_segments]
+	return
 }
 
 proc stop_audio {} {
@@ -252,6 +252,7 @@ proc adjustment_replay {decrement} {
     global g_sentence_adjust
 	
 	$g_sound stop
+	sound_refresh
 	set interval $g_sentence_adjust(interval)
 	set curr_stop [expr $g_sentence_adjust(end_audio) + $decrement]
 	set curr_start [expr $curr_stop - $interval]
@@ -263,6 +264,7 @@ proc adjustment_replay_next {decrement} {
 	global g_sound
     global g_sentence_adjust
 
+	sound_refresh
 	after 750
 	
 	set interval $g_sentence_adjust(interval)
@@ -303,4 +305,15 @@ proc adjustment_destroy {} {
 	
 	catch {destroy $g_sentence_adjust(v)}
     return
+}
+
+proc sound_refresh {} {
+    global g_sound
+	global g_filename
+	
+	if {$g_sound != ""} {
+	    $g_sound destroy
+	}
+	snack::sound $g_sound -file $g_filename
+	return
 }
