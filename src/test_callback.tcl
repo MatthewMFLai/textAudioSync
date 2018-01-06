@@ -41,6 +41,7 @@ pack $w.but3 -side top
 proc fileDialog {w} {
     global g_sound
 	global g_segments
+	global g_filename
 	
     #   Type names		Extension(s)	Mac File Type(s)
     #
@@ -70,6 +71,7 @@ proc fileDialog {w} {
 	    puts "$filename has no text file!"
 		return	
 	}
+	set g_filename $filename
 	
 	if {$g_sound != ""} {
 	    $g_sound destroy
@@ -125,7 +127,7 @@ proc audio_callback {} {
     global g_idx
     global g_timelist
     global g_sound
-
+	
 	# Remove underline.
     .t tag delete t_underline
 	
@@ -142,8 +144,18 @@ proc audio_callback {} {
     .t tag configure t_underline -underline 1
     .t tag add t_underline $start_txt $stop_txt
     .t see $start_txt
-	
-    after 1000
-    $g_sound play -start $start -end $stop -blocking 0 -command audio_callback
+
+    $g_sound play -start $start -end $stop -blocking 0 -command audio_gap
     return    
+}
+
+proc audio_gap {} {
+    global g_sound
+	global g_filename
+	
+	if {$g_sound != ""} {
+	    $g_sound destroy
+	}
+	snack::sound $g_sound -file $g_filename
+    after 500 {audio_callback}
 }
