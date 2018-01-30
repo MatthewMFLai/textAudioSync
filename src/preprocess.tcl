@@ -6,25 +6,30 @@ pack .t -side left -fill both -expand 1
 
 bind .t <ButtonRelease-1> {
     global g_state
-    if {[snack::audio active] && $g_state == "STATE_PAUSE"} {
+    if {$g_state == "STATE_PAUSE"} {
 	    global g_segments
         global g_datafile
+		global g_delay
 
 		set idx [.t index insert] 
-		set sndidx [s1 current_position]
+		set sndidx [lindex $g_delay 0]
         lappend g_segments "$idx $sndidx"
 		
-		resume_audio
-		
-		set fd [open $g_datafile a]
-		puts $fd "$idx $sndidx"
-		close $fd
-		
-		set lastidx [$w.frame.list size]
-		incr lastidx -1
-		$w.frame.list delete 0 $lastidx
-		foreach segment $g_segments {
-			$w.frame.list insert end $segment
+		set g_delay [lrange $g_delay 1 end]
+		if {$g_delay != ""} {
+			sound_refresh
+			resume_audio $sndidx [lindex $g_delay 0]
+			
+			set fd [open $g_datafile a]
+			puts $fd "$idx $sndidx"
+			close $fd
+			
+			set lastidx [$w.frame.list size]
+			incr lastidx -1
+			$w.frame.list delete 0 $lastidx
+			foreach segment $g_segments {
+				$w.frame.list insert end $segment
+			}
 		}
     }	
 }
@@ -119,38 +124,44 @@ proc fileDialog {w} {
 	.t delete 0.0 end
 	.t insert 0.0 $data
 
-	set g_delay ""
 	set g_segments ""
 	set g_datafile $filenameroot$prefix_dat
+	convert_delay $filenameroot$prefix_labels
+	
+	resume_audio 0 [lindex $g_delay 0]
+	
+	return
+}
+
+proc convert_delay {delayfile} {
+    global g_delay
+	global g_sound
 	
 	# Compute the delay period between each potential silence time marker.
 	# File data should look like
     # 2.882766	2.882766	S
     # 4.948073	4.948073	S
     # 10.016553	10.016553	S
-	set time_prev 0
-	set fd [open $filenameroot$prefix_labels r]
+	
+	# make sure the g_sound is the sound object constructed with the -load option,
+	# or else the info returns nothing useful.
+    set g_delay ""
+	set totaltime [$g_sound length -unit SECONDS]
+	set totalsamples [lindex [$g_sound info] 0]
+	set fd [open $delayfile r]
 	while {[gets $fd line] > -1} {
         set time_cur [lindex $line 0]
-		set time_cur [expr $time_cur * 1000]
-		set time_cur [expr int($time_cur)]
-		lappend g_delay [expr $time_cur - $time_prev]
-		set time_prev $time_cur
+		set time_cur [expr ($time_cur * $totalsamples) / $totaltime]
+		lappend g_delay [expr int($time_cur)]
 	}
 	close $fd
-	
-	resume_audio
-	
-	return
 }
 
 proc pause_audio {} {
-    global g_sound
     global g_state
 	
 	set g_state STATE_PAUSE
 	puts "click?"
-	$g_sound pause
 	return
 }
 
@@ -161,7 +172,7 @@ proc stop_audio {} {
 	return
 }
 
-proc resume_audio {} {
+proc resume_audio {start_idx stop_idx} {
     global g_sound
 	global g_delay
 	global g_state
@@ -170,12 +181,7 @@ proc resume_audio {} {
 	    return
 	}
 	set g_state STATE_PLAY
-	$g_sound play
-	
-	set delay [lindex $g_delay 0]
-	puts $delay
-	set g_delay [lrange $g_delay 1 end]
-	after $delay pause_audio
+	$g_sound play -start $start_idx -end $stop_idx -blocking 0 -command "pause_audio"
 }
 
 proc sound_refresh {} {
@@ -185,6 +191,6 @@ proc sound_refresh {} {
 	if {$g_sound != ""} {
 	    $g_sound destroy
 	}
-	snack::sound $g_sound -load $g_filename
+	snack::sound $g_sound -file $g_filename
 	return
 }

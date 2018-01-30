@@ -1,5 +1,8 @@
-set fd [open EXTRAORDINARY_ADVENTURES_OF_ARSENE_LUPIN.txt r]
-set fd2 [open test.out w]
+set infile [lindex $argv 0]
+set outfile [lindex $argv 1]
+
+set fd [open $infile r]
+set fd2 [open $outfile w]
 set paragraph ""
 while {[gets $fd line] > -1} {
    if {$line == ""} {
