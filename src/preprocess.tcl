@@ -17,7 +17,6 @@ bind .t <ButtonRelease-1> {
 		
 		set g_delay [lrange $g_delay 1 end]
 		if {$g_delay != ""} {
-			sound_refresh
 			resume_audio $sndidx [lindex $g_delay 0]
 			
 			set fd [open $g_datafile a]
@@ -182,15 +181,4 @@ proc resume_audio {start_idx stop_idx} {
 	}
 	set g_state STATE_PLAY
 	$g_sound play -start $start_idx -end $stop_idx -blocking 0 -command "pause_audio"
-}
-
-proc sound_refresh {} {
-    global g_sound
-	global g_filename
-	
-	if {$g_sound != ""} {
-	    $g_sound destroy
-	}
-	snack::sound $g_sound -file $g_filename
-	return
 }
